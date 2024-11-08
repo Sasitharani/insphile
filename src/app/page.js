@@ -1,11 +1,16 @@
 "use client"
 import 'tailwindcss/tailwind.css';
 import { useState } from 'react';
+import Head from 'next/head';
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
+    <>
+    <Head>
+        <title>Insphile Management Solutions</title>
+    </Head>
     <div className="flex flex-col min-h-screen bg-gray-100">
       <div className="w-full">
         <header className="w-full text-white p-4 flex justify-between items-center fixed top-0 left-0 right-0 z-10 bg-black">
@@ -96,5 +101,6 @@ export default function Home() {
         </div>
       </div>
     </div>
+    </>
   );
 }

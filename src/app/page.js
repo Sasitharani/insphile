@@ -2,6 +2,7 @@
 import 'tailwindcss/tailwind.css';
 import { useState } from 'react';
 import Head from 'next/head';
+import FeedbackForm from './FeedbackForm';
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -41,7 +42,7 @@ export default function Home() {
                   <li className="hover:text-yellow-500 font-medium text-xs"><a href="#whatwedo">Submenu 3</a></li>
                 </ul>
               </li>
-              <li className="hover:text-yellow-500 font-medium text-xs"><a href="#contact">Contact</a></li>
+              <li className="hover:text-yellow-500 font-medium text-xs"><a href="#contact"></a></li>
             </ul>
           </nav>
         </header>
@@ -96,11 +97,12 @@ export default function Home() {
         <div id="whatwedo" className="flex items-center justify-center min-h-screen border-2 border-purple-800">
           <h2 className="text-4xl font-bold">What we do</h2>
         </div>
-        <div id="contact" className="flex items-center justify-center min-h-screen border-2 border-pink-800">
-          <h2 className="text-4xl font-bold">Contact</h2>
+        <div id="contact" className="flex  justify-center min-h-screen border-2 border-pink-800">
+          <FeedbackForm />
         </div>
       </div>
     </div>
     </>
   );
 }
+

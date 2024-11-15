@@ -5,8 +5,7 @@ const path = require('path');
 const router = express.Router();
 
 router.post('/', async (req, res) => {
-console.log('Email API Hit')
-  const { name, email, phone, message, fileName, attachmentPath, } = req.body;
+  const { name, email, phone, message, fileName, filePath } = req.body;
 
   // Create a transporter object using the default SMTP transport
   let transporter = nodemailer.createTransport({
@@ -18,6 +17,7 @@ console.log('Email API Hit')
       pass: 'xwwhhaozejfdiavv', // Replace with your Google App Password
     },
   });
+
   // Create the HTML content for the email
   const htmlContent = `
     <h2>You have got an enquiry from Insphile website</h2>
@@ -42,14 +42,14 @@ console.log('Email API Hit')
         <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Message</td>
         <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${message}</td>
       </tr>
-       <tr>
+      <tr>
         <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Attachment</td>
-        <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${attachmentPath && fileName ? 'Yes' : 'No'}</td>
+        <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${fileName ? 'Yes' : 'No'}</td>
       </tr>
     </table>
   `;
 
-  // Send mail with defined transport object
+  // Define mail options
   let mailOptions = {
     from: '"Insphile Support" <sasitharani@gmail.com>', // Replace with your email
     to: "hrd@insphile.in, sasitharani@gmail.com", // Multiple recipients
@@ -58,11 +58,11 @@ console.log('Email API Hit')
   };
 
   // Add attachment if present
-  if (attachmentPath && fileName) {
+  if (filePath && fileName) {
     mailOptions.attachments = [
       {
         filename: fileName, // Name of the file
-        path: attachmentPath, // Path to the document
+        path: filePath, // Path to the document
       },
     ];
   }

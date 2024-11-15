@@ -8,6 +8,7 @@ const FeedbackForm = () => {
   const [message, setMessage] = useState('');
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState('');
+  const [filePath, setFilePath] = useState(''); // New state variable for file path
   const [submitted, setSubmitted] = useState(false);
   const [messageText, setMessageText] = useState(''); // Updated state variable
   const [loading, setLoading] = useState(false);
@@ -36,13 +37,14 @@ const FeedbackForm = () => {
       if (uploadResponse.ok) {
         const data = await uploadResponse.json();
         setFileName(data.fileName);
+        setFilePath(data.filePath); // Set the file path
         setFile(selectedFile);
-        setMessageText('File attached successfully');
+        setMessageText('File uploaded successfully');
       } else {
-        setMessageText('Error attaching file');
+        setMessageText('Error uploading file');
       }
     } catch (error) {
-      setMessageText('Error attaching file');
+      setMessageText('Error uploading file');
     }
   };
 
@@ -58,7 +60,7 @@ const FeedbackForm = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, phone, message, fileName }),
+        body: JSON.stringify({ name, email, phone, message, fileName, filePath }), // Include filePath
       });
 
       if (emailResponse.ok) {
@@ -69,6 +71,7 @@ const FeedbackForm = () => {
         setMessage('');
         setFile(null);
         setFileName('');
+        setFilePath(''); // Reset the file path
         setMessageText('Email sent successfully');
       } else {
         setMessageText('Error sending email');

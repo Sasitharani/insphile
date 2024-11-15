@@ -1,7 +1,12 @@
-import nodemailer from 'nodemailer';
+const express = require('express');
+const nodemailer = require('nodemailer');
+const path = require('path');
 
-export async function POST(request) {
-  const { name, email, phone, message } = await request.json();
+const router = express.Router();
+
+router.post('/', async (req, res) => {
+console.log('Email API Hit')
+  const { name, email, phone, message, fileName, attachmentPath, } = req.body;
 
   // Create a transporter object using the default SMTP transport
   let transporter = nodemailer.createTransport({
@@ -13,7 +18,6 @@ export async function POST(request) {
       pass: 'xwwhhaozejfdiavv', // Replace with your Google App Password
     },
   });
-
   // Create the HTML content for the email
   const htmlContent = `
     <h2>You have got an enquiry from Insphile website</h2>
@@ -38,16 +42,37 @@ export async function POST(request) {
         <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Message</td>
         <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${message}</td>
       </tr>
+       <tr>
+        <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Attachment</td>
+        <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${attachmentPath && fileName ? 'Yes' : 'No'}</td>
+      </tr>
     </table>
   `;
 
   // Send mail with defined transport object
-  let info = await transporter.sendMail({
+  let mailOptions = {
     from: '"Insphile Support" <sasitharani@gmail.com>', // Replace with your email
-    to: "hrd@insphile.in, sasitharani@gmail.com",
+    to: "hrd@insphile.in, sasitharani@gmail.com", // Multiple recipients
     subject: "New Enquiry from Insphile Website",
     html: htmlContent,
-  });
+  };
 
-  return new Response(JSON.stringify({ message: 'Email sent successfully' }), { status: 200 });
-}
+  // Add attachment if present
+  if (attachmentPath && fileName) {
+    mailOptions.attachments = [
+      {
+        filename: fileName, // Name of the file
+        path: attachmentPath, // Path to the document
+      },
+    ];
+  }
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'Email sent successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error sending email' });
+  }
+});
+
+module.exports = router;

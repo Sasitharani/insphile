@@ -1,40 +1,80 @@
 import { useState } from 'react';
+import Swal from 'sweetalert2';
 
 const FeedbackForm = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
+  const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
+  const [messageText, setMessageText] = useState(''); // Updated state variable
   const [loading, setLoading] = useState(false);
+
+  const handleFileChange = async (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) {
+      setMessageText('No file selected');
+      return;
+    }
+
+    if (selectedFile.size > 16 * 1024 * 1024) {
+      setMessageText('File size exceeds 16 MB');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (uploadResponse.ok) {
+        const data = await uploadResponse.json();
+        setFileName(data.fileName);
+        setFile(selectedFile);
+        setMessageText('File attached successfully');
+      } else {
+        setMessageText('Error attaching file');
+      }
+    } catch (error) {
+      setMessageText('Error attaching file');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitted(false);
-    setError('');
+    setMessageText('');
     setLoading(true);
 
     try {
-      const response = await fetch('/api/send-email', {
+      const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, phone, message }),
+        body: JSON.stringify({ name, email, phone, message, fileName }),
       });
 
-      if (response.ok) {
+      if (emailResponse.ok) {
         setSubmitted(true);
         setName('');
         setEmail('');
         setPhone('');
         setMessage('');
+        setFile(null);
+        setFileName('');
+        setMessageText('Email sent successfully');
       } else {
-        setError('Error sending email');
+        setMessageText('Error sending email');
       }
     } catch (error) {
-      setError('Error sending email');
+      setMessageText('Error sending email');
     } finally {
       setLoading(false);
     }
@@ -51,13 +91,8 @@ const FeedbackForm = () => {
         </div>
       )}
       {submitted && (
-        <div className="text-green-500 text-xl font-bold text-center mb-4 animate-bounce">
+        <div className="text-green-500 text-3xl font-bold text-center mb-4 animate-bounce">
           We have successfully received your enquiry. We will contact you soon.
-        </div>
-      )}
-      {!submitted && (
-        <div className="text-gray-700 text-center mb-4">
-          Please fill the Form, we are happy to contact you back.
         </div>
       )}
       <form onSubmit={handleSubmit}>
@@ -108,7 +143,19 @@ const FeedbackForm = () => {
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
         </div>
-        {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="file">
+            Attach a document
+          </label>
+          <input
+            type="file"
+            id="file"
+            onChange={handleFileChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+          {fileName && <p className="text-gray-700 mt-2">Uploaded file: {fileName}</p>}
+        </div>
+        {messageText && <p className={`text-center mt-4 ${messageText.includes('Error') ? 'text-red-500' : 'text-green-500'}`}>{messageText}</p>}
         <div className="flex items-center justify-between">
           <button
             type="submit"

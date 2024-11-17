@@ -14,6 +14,7 @@ const FeedbackForm = () => {
   const [submitted, setSubmitted] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fileLoading, setFileLoading] = useState(false);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
 
@@ -28,6 +29,8 @@ const FeedbackForm = () => {
 
     console.log('Attempting file upload to:', `${process.env.NEXT_PUBLIC_BASE_URL}/api/upload`);
     
+    setFileLoading(true);
+
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
@@ -45,8 +48,8 @@ const FeedbackForm = () => {
       }
 
       const data = await response.json();
-      console.log('Upload response data:',data.path);
-      setFilePath((data.path));
+      console.log('Upload response data:', data);
+      setFilePath(data.path);
       setFileName(selectedFile.name);
       setFile(selectedFile);
 
@@ -55,6 +58,8 @@ const FeedbackForm = () => {
     } catch (error) {
       console.error('Error uploading file:', error);
       setError('Error uploading file');
+    } finally {
+      setFileLoading(false);
     }
   };
 
@@ -143,7 +148,13 @@ const FeedbackForm = () => {
   }
 
   return (
-    <div className="feedback-form bg-gray-200 p-8 rounded-lg shadow-md max-w-full md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto">
+    <div className={`feedback-form bg-gray-200 p-8 rounded-lg shadow-md max-w-full md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto ${loading ? 'opacity-50' : ''}`}>
+      {loading && (
+        <div className="fixed inset-0 flex flex-col items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+          <div className="loader"></div>
+          <p className="text-white mt-4">Please wait, your message is being sent...</p>
+        </div>
+      )}
       <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Feedback Form</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -196,14 +207,17 @@ const FeedbackForm = () => {
             id="file"
             onChange={handleFileChange}
             className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            disabled={fileLoading}
           />
+          {fileLoading && <div className="loader mt-2"></div>}
           {fileName && <p className="text-green-500 mt-2">{messageText}</p>}
         </div>
         <button
           type="submit"
           className="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          disabled={loading}
         >
-          Submit
+          {loading ? 'Sending your details...' : 'Submit'}
         </button>
         {error && <p className="text-red-500 text-center mt-4">{error}</p>}
       </form>

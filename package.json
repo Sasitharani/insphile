@@ -7,9 +7,13 @@
     "build": "next build",
     "export": "next export",
     "start": "node server.js",
-    "lint": "next lint"
+    "lint": "next lint",
+    "restart": "restart.bat"
   },
   "dependencies": {
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "formidable": "^3.5.2",
     "morgan": "^1.10.0",

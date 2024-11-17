@@ -1,31 +1,31 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
-const path = require('path');
-
 const router = express.Router();
 
 router.post('/', async (req, res) => {
-  const { name, email, phone, message, fileName, filePath } = req.body;
+  console.log(req.body);
+  const { name, email, phone, message, filePath, fileName } = req.body;
 
-  // Create a transporter object using the default SMTP transport
-  let transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com', // Gmail SMTP server
-    port: 587,
-    secure: false, // true for 465, false for other ports
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
     auth: {
-      user: 'sasitharani@gmail.com', // Replace with your email
-      pass: 'xwwhhaozejfdiavv', // Replace with your Google App Password
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
 
-  // Create the HTML content for the email
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: 'sasitharani@gmail.com,hrd@insphile.in', // Replace with your recipient email address
+    subject: 'New Enquiry Form Submission',
+    text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`,
+    html: '', // Initialize htmlContent here
+  };
+
+  // Define htmlContent
   const htmlContent = `
-    <h2>You have got an enquiry from Insphile website</h2>
-    <table style="width: 100%; border-collapse: collapse;">
-      <tr>
-        <th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Field</th>
-        <th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Details</th>
-      </tr>
+    <h1>New Feedback Form Submission</h1>
+    <table style="border-collapse: collapse; width: 100%;">
       <tr>
         <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Name</td>
         <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${name}</td>
@@ -44,18 +44,17 @@ router.post('/', async (req, res) => {
       </tr>
       <tr>
         <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Attachment</td>
-        <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${fileName ? 'Yes' : 'No'}</td>
+        <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${filePath}</td>
+      </tr>
+      <tr>
+        <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Attachment Name</td>
+        <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${fileName}</td>
       </tr>
     </table>
   `;
 
-  // Define mail options
-  let mailOptions = {
-    from: '"Insphile Support" <sasitharani@gmail.com>', // Replace with your email
-    to: "hrd@insphile.in, sasitharani@gmail.com", // Multiple recipients
-    subject: "New Enquiry from Insphile Website",
-    html: htmlContent,
-  };
+  // Set htmlContent in mailOptions
+  mailOptions.html = htmlContent;
 
   // Add attachment if present
   if (filePath && fileName) {
@@ -71,6 +70,7 @@ router.post('/', async (req, res) => {
     await transporter.sendMail(mailOptions);
     res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {
+    console.error('Error sending email:', error);
     res.status(500).json({ error: 'Error sending email' });
   }
 });

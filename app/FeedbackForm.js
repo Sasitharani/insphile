@@ -1,4 +1,6 @@
-import { useState } from 'react';
+"use client"
+
+import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 
 const FeedbackForm = () => {
@@ -8,165 +10,202 @@ const FeedbackForm = () => {
   const [message, setMessage] = useState('');
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState('');
-  const [filePath, setFilePath] = useState(''); // New state variable for file path
+  const [filePath, setFilePath] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [messageText, setMessageText] = useState(''); // Updated state variable
+  const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    console.log('Environment Variables:', process.env);
+  }, []);
 
   const handleFileChange = async (e) => {
     const selectedFile = e.target.files[0];
-    if (!selectedFile) {
-      setMessageText('No file selected');
-      return;
-    }
+    if (!selectedFile) return;
 
-    if (selectedFile.size > 16 * 1024 * 1024) {
-      setMessageText('File size exceeds 16 MB');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
+    console.log('Attempting file upload to:', `${process.env.NEXT_PUBLIC_BASE_URL}/api/upload`);
+    
     try {
-      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/upload`, {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/upload`, {
         method: 'POST',
         body: formData,
       });
 
-      if (uploadResponse.ok) {
-        const data = await uploadResponse.json();
-        setFileName(data.fileName);
-        setFilePath(data.filePath); // Set the file path
-        setFile(selectedFile);
-        setMessageText('File uploaded successfully');
-      } else {
-        setMessageText('Error uploading file');
+      console.log('Upload response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'File upload failed');
       }
+
+      const data = await response.json();
+      console.log('Upload response data:',data.path);
+      setFilePath((data.path));
+      setFileName(selectedFile.name);
+      setFile(selectedFile);
+
+      // Display file name in green text
+      setMessageText(`File successfully attached: ${selectedFile.name}`);
     } catch (error) {
-      setMessageText('Error uploading file');
+      console.error('Error uploading file:', error);
+      setError('Error uploading file');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(false);
-    setMessageText('');
     setLoading(true);
+    setError('');
 
+    if (!file) {
+      Swal.fire({
+        title: 'No file attached',
+        text: 'Would you like to send without attachment or attach a resume?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Send without attachment',
+        cancelButtonText: 'Attach a resume'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Proceed to send without attachment
+          sendForm();
+        } else {
+          // Just close the alert
+          setLoading(false);
+        }
+      });
+    } else {
+      sendForm();
+    }
+  };
+
+  const sendForm = async () => {
     try {
-      const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-email`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, phone, message, fileName, filePath }), // Include filePath
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          message,
+          filePath,
+          fileName
+        }),
       });
 
-      if (emailResponse.ok) {
-        setSubmitted(true);
-        setName('');
-        setEmail('');
-        setPhone('');
-        setMessage('');
-        setFile(null);
-        setFileName('');
-        setFilePath(''); // Reset the file path
-        setMessageText('Email sent successfully');
-      } else {
-        setMessageText('Error sending email');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send message');
       }
+
+      setSubmitted(true);
+      Swal.fire({
+        title: 'Success!',
+        text: 'Your message has been sent successfully!',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
+
+      // Reset form
+      setName('');
+      setEmail('');
+      setPhone('');
+      setMessage('');
+      setFile(null);
+      setFileName('');
+      setFilePath('');
+      setMessageText('');
     } catch (error) {
-      setMessageText('Error sending email');
+      console.error('Error:', error);
+      setError('Failed to send message');
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to send message. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  if (!mounted) {
+    return null; // or a loading spinner
+  }
+
   return (
-    <div className="feedback-form bg-gray-200 p-8 rounded-lg shadow-md max-w-full md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto focus-within:bg-gray-300 active:bg-gray-400 transition-colors duration-300">
-      {loading && (
-        <div className="loading-overlay flex items-center justify-center fixed inset-0 bg-black bg-opacity-50 z-50">
-          <div className="text-white text-lg">
-            <div className="loader border-t-4 border-b-4 border-white rounded-full w-12 h-12 mb-4 animate-spin"></div>
-            Please wait, we are registering your feedback...
-          </div>
-        </div>
-      )}
-      {submitted && (
-        <div className="text-green-500 text-3xl font-bold text-center mb-4 animate-bounce">
-          We have successfully received your enquiry. We will contact you soon.
-        </div>
-      )}
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-            Name
-          </label>
+    <div className="feedback-form bg-gray-200 p-8 rounded-lg shadow-md max-w-full md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto">
+      <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Feedback Form</h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name:</label>
           <input
             type="text"
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
         </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-            Email
-          </label>
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email:</label>
           <input
             type="email"
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
         </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="phone">
-            Phone
-          </label>
+        <div>
+          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number:</label>
           <input
             type="tel"
             id="phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
         </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="message">
-            Message
-          </label>
+        <div>
+          <label htmlFor="message" className="block text-sm font-medium text-gray-700">Message:</label>
           <textarea
             id="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
+            required
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-32"
+          ></textarea>
         </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="file">
-            Attach a document
-          </label>
+        <div>
+          <label htmlFor="file" className="block text-sm font-medium text-gray-700">Upload File:</label>
           <input
             type="file"
             id="file"
             onChange={handleFileChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           />
-          {fileName && <p className="text-gray-700 mt-2">Uploaded file: {fileName}</p>}
+          {fileName && <p className="text-green-500 mt-2">{messageText}</p>}
         </div>
-        {messageText && <p className={`text-center mt-4 ${messageText.includes('Error') ? 'text-red-500' : 'text-green-500'}`}>{messageText}</p>}
-        <div className="flex items-center justify-between">
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Submit
-          </button>
-        </div>
+        <button
+          type="submit"
+          className="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Submit
+        </button>
+        {error && <p className="text-red-500 text-center mt-4">{error}</p>}
       </form>
     </div>
   );

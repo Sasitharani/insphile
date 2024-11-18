@@ -23,44 +23,18 @@ const FeedbackForm = () => {
     console.log('Environment Variables:', process.env);
   }, []);
 
-  const handleFileChange = async (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
+  // Function to handle file selection
+  // Function to handle file selection
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0]; // Get the first selected file from the input
 
-    console.log('Attempting file upload to:', `${process.env.NEXT_PUBLIC_BASE_URL}/api/upload`);
-    
-    setFileLoading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-
-  
-      console.log('Upload response status:', response.status);
-      console.log('Upload response:', response);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'File upload failed');
-      }
-
-      const data = await response.json();
-      console.log('Upload response path:',data.path);
-      setFilePath(data.path);
-      setFileName(selectedFile.name);
-      setFile(selectedFile);
-
-      // Display file name in green text
-      setMessageText(`File successfully attached: ${selectedFile.name}`);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      setError('Error uploading file');
-    } finally {
-      setFileLoading(false);
+    if (selectedFile) { // Check if a file was selected
+      setFileName(selectedFile.name); // Update the state with the selected file's name
+      setFile(selectedFile); // Update the state with the selected file
+      setMessageText('File attached successfully- ' + selectedFile.name);
+    } else {
+      setFileName(''); // Reset the file name state if no file is selected
+      setFile(null); // Reset the file state if no file is selected
     }
   };
 
@@ -94,7 +68,7 @@ const FeedbackForm = () => {
   const sendForm = async () => {
     try {
       console.log('sending form data to:', `${process.env.NEXT_PUBLIC_BASE_URL}/api/send-email`);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-email`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/upload`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

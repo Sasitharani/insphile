@@ -1,63 +1,104 @@
 // server.js
-const express = require('express');
-const next = require('next');
-const path = require('path');
-const fs = require('fs');
-const cors = require('cors'); // Import the cors middleware
-const uploadRouter = require('./express/routes/upload');
-const sendEmailRouter = require('./express/routes/send-email'); // Import the send-email router
+
+// Import necessary modules
+const express = require('express'); // Express framework for building the server
+const next = require('next'); // Next.js for server-side rendering and routing
+const cors = require('cors'); // CORS middleware to enable Cross-Origin Resource Sharing
+const multer = require('multer'); // Multer middleware for handling file uploads in memory
+const nodemailer = require('nodemailer'); // Nodemailer for sending emails
 require('dotenv').config(); // Load environment variables from .env file
 
+// Import custom routers
+const uploadRouter = require('./express/routes/upload'); // Router for handling file uploads
+const sendEmailRouter = require('./express/routes/send-email'); // Router for handling email sending
+
+// Determine the environment (development or production)
 const dev = process.env.NODE_ENV !== 'production';
+
+// Initialize Next.js app with the determined environment
 const app = next({ dev });
+
+// Get Next.js request handler to handle all other routes
 const handle = app.getRequestHandler();
 
+// Define storage strategy for Multer (in-memory storage)
+const storage = multer.memoryStorage(); // Store files in memory as Buffer objects
+
+// Initialize Multer with the defined storage strategy
+const upload = multer({ storage }); // Configure Multer to use in-memory storage
+
+// Create a Nodemailer transporter using credentials from environment variables
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // Use Gmail as the email service provider
+  auth: {
+    user: process.env.EMAIL_USER, // Email address from .env file
+    pass: process.env.EMAIL_PASS, // Email password or app-specific password from .env file
+  },
+});
+
+
+
+// Prepare the Next.js app
 app.prepare().then(() => {
-  const server = express();
-  const port = process.env.PORT || 3000; // Use environment variable for port
+  const server = express(); // Initialize Express server
+  const port = process.env.PORT || 3000; // Define the port number from environment variable or default to 3000
 
-  // Use the cors middleware
-  server.use(cors());
+  // Enable CORS with specific settings
+  server.use(cors({
+    origin: process.env.BASE_URL, // Allow requests only from the specified origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Specify allowed HTTP methods
+    credentials: true, // Allow cookies and authentication information in requests
+  }));
 
-  // Ensure the upload directory exists
-  const uploadDir = path.join(__dirname, 'uploads');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
+  // Configure body parsers with increased size limits to handle large payloads
+  server.use(express.json({ limit: '50mb' })); // Parse incoming JSON requests with a limit of 50MB
+  server.use(express.urlencoded({ limit: '50mb', extended: true })); // Parse incoming URL-encoded requests with a limit of 50MB
 
-  // Serve static files from the upload directory
-  server.use('/uploads', express.static(uploadDir));
+  // Initialize Multer middleware for handling file uploads (in-memory)
+  server.use('/api/upload', upload.single('file')); // Handle single file upload with the field name 'file'
 
-  // Configure body size limit
-  server.use(express.json({ limit: '50mb' })); // Adjust the limit as needed
-  server.use(express.urlencoded({ limit: '50mb', extended: true })); // Adjust the limit as needed
-
-  // Middleware to log requests
-  server.use((req, res, next) => {
-    //console.log(`Received request: ${req.method} ${req.url}`);
-    next();
-  });
-
-  // Use the upload router
+  // Add logging middleware for /api/upload route to log when it's accessed
   server.use('/api/upload', (req, res, next) => {
-    console.log('Upload route hit');
-    next();
-  }, uploadRouter);
+    console.log('Upload Router was accessed'); // Log a message indicating the upload route was hit
+    next(); // Proceed to the uploadRouter middleware
+  }, uploadRouter); // Mount the uploadRouter to handle the upload logic
 
-  // Use the send-email router
+  // Add logging middleware for /api/send-email route to log when it's accessed
   server.use('/api/send-email', (req, res, next) => {
-    console.log('Send Email route hit');
-    next();
-  }, sendEmailRouter);
+    console.log('Send Email Router was accessed'); // Log a message indicating the send-email route was hit
+    next(); // Proceed to the sendEmailRouter middleware
+  }, sendEmailRouter); // Mount the sendEmailRouter to handle the email sending logic
+
+  // Define a simple GET route at '/test' to verify that the server is running correctly
+  server.get('/test', (req, res) => {
+    res.send('Test route is working!'); // Respond with a confirmation message
+  });
 
   // Handle all other routes with Next.js
   server.all('*', (req, res) => {
-    //console.log(`Handling request for ${req.url}`); // Logging statement
-    return handle(req, res);
+    return handle(req, res); // Delegate request handling to Next.js
   });
 
+  // Start the server and listen on the defined port
+  // server.listen(port, '0.0.0.0', (err) => {
+  //   if (err) throw err; // Throw an error if server fails to start
+  //   console.log(`> Server is running on ${process.env.BASE_URL}`); // Log the server URL as a clickable link
+  // });
   server.listen(port, (err) => {
     if (err) throw err;
     console.log(`Server is running on http://localhost:${port}`);
   });
+  server.listen(port, '0.0.0.0', (err) => {
+    if (err) throw err; // Throw an error if server fails to start
+    console.log(`> Server is running on ${process.env.BASE_URL}`); // Log the server URL as a clickable link
+  });
+
+  // Verify the Nodemailer transporter configuration
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('Error configuring Nodemailer transporter:', error); // Log any configuration errors
+  } else {
+    console.log('Nodemailer transporter is ready to send emails'); // Confirmation message when transporter is ready
+  }
+});
 });

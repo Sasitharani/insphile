@@ -40,15 +40,16 @@ const FeedbackForm = () => {
         body: formData,
       });
 
+  
       console.log('Upload response status:', response.status);
-
+      console.log('Upload response:', response);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'File upload failed');
       }
 
       const data = await response.json();
-      console.log('Upload response data:', data);
+      console.log('Upload response path:',data.path);
       setFilePath(data.path);
       setFileName(selectedFile.name);
       setFile(selectedFile);
@@ -92,7 +93,8 @@ const FeedbackForm = () => {
 
   const sendForm = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/email`, {
+      console.log('sending form data to:', `${process.env.NEXT_PUBLIC_BASE_URL}/api/send-email`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +157,7 @@ const FeedbackForm = () => {
           <p className="text-white mt-4">Please wait, your message is being sent...</p>
         </div>
       )}
-      <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Feedback Form</h2>
+      <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Enquiry Form</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name:</label>

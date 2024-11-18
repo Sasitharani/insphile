@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
       </tr>
       <tr>
         <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Attachment</td>
-        <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${filePath}</td>
+        <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">${filePath ? 'Yes' : 'No'}</td>
       </tr>
       <tr>
         <td style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Attachment Name</td>
@@ -53,7 +53,6 @@ router.post('/', async (req, res) => {
     </table>
   `;
 
-  // Set htmlContent in mailOptions
   mailOptions.html = htmlContent;
 
   // Add attachment if present
@@ -71,7 +70,9 @@ router.post('/', async (req, res) => {
     res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {
     console.error('Error sending email:', error);
-    res.status(500).json({ error: 'Error sending email' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Error sending email' });
+    }
   }
 });
 

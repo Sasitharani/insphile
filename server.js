@@ -6,6 +6,7 @@ const fs = require('fs');
 const cors = require('cors'); // Import the cors middleware
 const uploadRouter = require('./express/routes/upload');
 const sendEmailRouter = require('./express/routes/send-email'); // Import the send-email router
+require('dotenv').config(); // Load environment variables from .env file
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -13,7 +14,7 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   const server = express();
-  const port = 3005; // Always use port 3005
+  const port = process.env.PORT || 3000; // Use environment variable for port
 
   // Use the cors middleware
   server.use(cors());
@@ -31,12 +32,23 @@ app.prepare().then(() => {
   server.use(express.json({ limit: '50mb' })); // Adjust the limit as needed
   server.use(express.urlencoded({ limit: '50mb', extended: true })); // Adjust the limit as needed
 
+  // Middleware to log requests
+  server.use((req, res, next) => {
+    console.log(`Received request: ${req.method} ${req.url}`);
+    next();
+  });
+
   // Use the upload router
-  server.use('/api/upload', uploadRouter);
+  server.use('/api/upload', (req, res, next) => {
+    console.log('Upload route hit');
+    next();
+  }, uploadRouter);
 
   // Use the send-email router
-
-  server.use('/api/email', sendEmailRouter);
+  server.use('/api/send-email', (req, res, next) => {
+    console.log('Send Email route hit');
+    next();
+  }, sendEmailRouter);
 
   // Handle all other routes with Next.js
   server.all('*', (req, res) => {

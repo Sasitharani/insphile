@@ -34,7 +34,7 @@ app.prepare().then(() => {
 
   // Middleware to log requests
   server.use((req, res, next) => {
-    console.log(`Received request: ${req.method} ${req.url}`);
+    //console.log(`Received request: ${req.method} ${req.url}`);
     next();
   });
 
@@ -52,7 +52,7 @@ app.prepare().then(() => {
 
   // Handle all other routes with Next.js
   server.all('*', (req, res) => {
-    console.log(`Handling request for ${req.url}`); // Logging statement
+    //console.log(`Handling request for ${req.url}`); // Logging statement
     return handle(req, res);
   });
 

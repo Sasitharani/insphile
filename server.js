@@ -29,9 +29,11 @@ const upload = multer({ storage }); // Configure Multer to use in-memory storage
 
 // Create a Nodemailer transporter using credentials from environment variables
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Use Gmail as the email service provider
-  auth: {
-    user: 'sasitharani@gmail.com', // Email address from .env file
+  host: 'smtp.gmail.com', // Gmail SMTP server
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: 'sasitharani@gmail.com', // Replace with your email
     pass: 'joyssxsayiqeaunu' // Email password or app-specific password from .env file
   },
 });

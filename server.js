@@ -9,8 +9,8 @@ const nodemailer = require('nodemailer'); // Nodemailer for sending emails
 require('dotenv').config(); // Load environment variables from .env file
 
 // Import custom routers
-const uploadRouter = require('./express/routes/upload'); // Router for handling file uploads
-const sendEmailRouter = require('./express/routes/send-email'); // Router for handling email sending
+const uploadRouter = require('./express/routes/upload-email'); // Adjust the path as necessary
+
 
 // Determine the environment (development or production)
 const dev = process.env.NODE_ENV !== 'production';
@@ -31,8 +31,8 @@ const upload = multer({ storage }); // Configure Multer to use in-memory storage
 const transporter = nodemailer.createTransport({
   service: 'gmail', // Use Gmail as the email service provider
   auth: {
-    user: process.env.EMAIL_USER, // Email address from .env file
-    pass: process.env.EMAIL_PASS, // Email password or app-specific password from .env file
+    user: 'sasitharani@gmail.com', // Email address from .env file
+    pass: 'joyssxsayiqeaunu' // Email password or app-specific password from .env file
   },
 });
 
@@ -54,25 +54,15 @@ app.prepare().then(() => {
   server.use(express.json({ limit: '50mb' })); // Parse incoming JSON requests with a limit of 50MB
   server.use(express.urlencoded({ limit: '50mb', extended: true })); // Parse incoming URL-encoded requests with a limit of 50MB
 
-  // Initialize Multer middleware for handling file uploads (in-memory)
-  server.use('/api/upload', upload.single('file')); // Handle single file upload with the field name 'file'
+ 
 
   // Add logging middleware for /api/upload route to log when it's accessed
-  server.use('/api/upload', (req, res, next) => {
-    console.log('Upload Router was accessed'); // Log a message indicating the upload route was hit
-    next(); // Proceed to the uploadRouter middleware
-  }, uploadRouter); // Mount the uploadRouter to handle the upload logic
+  server.use('/api/upload', uploadRouter);
 
   // Add logging middleware for /api/send-email route to log when it's accessed
-  server.use('/api/send-email', (req, res, next) => {
-    console.log('Send Email Router was accessed'); // Log a message indicating the send-email route was hit
-    next(); // Proceed to the sendEmailRouter middleware
-  }, sendEmailRouter); // Mount the sendEmailRouter to handle the email sending logic
 
-  // Define a simple GET route at '/test' to verify that the server is running correctly
-  server.get('/test', (req, res) => {
-    res.send('Test route is working!'); // Respond with a confirmation message
-  });
+
+
 
   // Handle all other routes with Next.js
   server.all('*', (req, res) => {
@@ -84,13 +74,10 @@ app.prepare().then(() => {
   //   if (err) throw err; // Throw an error if server fails to start
   //   console.log(`> Server is running on ${process.env.BASE_URL}`); // Log the server URL as a clickable link
   // });
+
   server.listen(port, (err) => {
-    if (err) throw err;
-    console.log(`Server is running on http://localhost:${port}`);
-  });
-  server.listen(port, '0.0.0.0', (err) => {
     if (err) throw err; // Throw an error if server fails to start
-    console.log(`> Server is running on ${process.env.BASE_URL}`); // Log the server URL as a clickable link
+    console.log(`> Server is running on http://localhost:${port}`); // Log the server URL as a clickable link
   });
 
   // Verify the Nodemailer transporter configuration

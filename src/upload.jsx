@@ -4,14 +4,16 @@ function FeedbackForm() {
   const form = useRef(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg('');
 
     const formData = new FormData(form.current);
 
-    fetch('/api/upload', {
+    fetch('https://test.insphile.in/upload.php', { // Replace with your actual domain and path to upload.php
       method: 'POST',
       body: formData,
     })
@@ -19,9 +21,16 @@ function FeedbackForm() {
       .then((data) => {
         setSubmitted(true);
         setLoading(false);
+        console.log(data);
+        if (data.includes('File uploaded and email sent successfully.')) {
+          setSubmitted(true);
+        } else {
+          setErrorMsg(data);
+        }
       })
       .catch((err) => {
         console.error(err);
+        setErrorMsg('Failed to upload file. Please try again.');
         setLoading(false);
       });
   };
@@ -36,36 +45,12 @@ function FeedbackForm() {
           </div>
         </div>
       )}
-      {submitted && (
-        <div className="text-green-500 text-xl font-bold text-center mb-4">
-          File uploaded successfully.
-        </div>
-      )}
-      {!submitted && (
-        <div className="text-gray-700 text-center mb-4">
-          Please select a file to upload.
-        </div>
-      )}
-      <form ref={form} onSubmit={handleSubmit} encType="multipart/form-data">
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="file">
-            Upload File
-          </label>
-          <input
-            type="file"
-            id="file"
-            name="file"
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            required
-          />
-        </div>
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        >
-          {loading ? 'Uploading...' : 'Upload'}
-        </button>
+      <form ref={form} onSubmit={handleSubmit}>
+        <input type="file" name="file" />
+        <button type="submit" className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Upload</button>
       </form>
+      {submitted && <p className="mt-4 text-green-500">File uploaded successfully!</p>}
+      {errorMsg && <p className="mt-4 text-red-500">{errorMsg}</p>}
     </div>
   );
 }

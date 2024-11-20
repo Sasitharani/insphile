@@ -1,44 +1,74 @@
-import { useState, useRef } from 'react';
-//import emailjs from 'emailjs-com';
+import { useRef, useState } from 'react';
+import Swal from 'sweetalert2';
 
-const FeedbackForm = () => {
-  // References and State Variables
-  const form = useRef();
+function EnquiryForm() {
+  const form = useRef(null);
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  // Replace these constants with your actual EmailJS credentials
-  const SERVICE_ID = 'service_xjneed7';      // e.g., 'service_xxx'
-  const TEMPLATE_ID = 'template_bhqmdql';    // e.g., 'template_xxx'
-  const USER_ID = 'RghE7VjKWDHluwdyd';            // e.g., 'user_xxx'
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(false);
-    setErrorMsg('');
     setLoading(true);
+    setErrorMsg('');
 
-    emailjs.sendForm(SERVICE_ID, TEMPLATE_ID, form.current, USER_ID)
-      .then((result) => {
-        console.log('Email successfully sent!', result.text);
+    const formData = new FormData(form.current);
+    const fileInput = form.current.querySelector('input[type="file"]');
+
+    if (!fileInput.files.length) {
+      setLoading(false);
+      Swal.fire({
+        title: 'No file attached',
+        text: 'Would you like to attach your resume?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          fileInput.classList.add('bg-red-100');
+          const fileLabel = form.current.querySelector('label[for="file"]');
+          fileLabel.classList.add('text-red-500');
+          fileLabel.insertAdjacentHTML('afterend', '<p class="text-red-500">Please attach your file</p>');
+        } else {
+          sendFormData(formData);
+        }
+      });
+    } else {
+      sendFormData(formData);
+    }
+  };
+
+  const sendFormData = (formData) => {
+    fetch('https://test.insphile.in/upload.php', { // Replace with your actual domain and path to upload.php
+      method: 'POST',
+      body: formData,
+    })
+      .then((res) => res.text())
+      .then((data) => {
         setSubmitted(true);
         setLoading(false);
-        form.current.reset();
-      }, (error) => {
-        console.error('Failed to send email. Error:', error.text);
-        setErrorMsg('Failed to send email. Please try again later.');
+        console.log(data);
+        if (data.includes('File uploaded and email sent successfully.')) {
+          setSubmitted(true);
+        } else {
+          setErrorMsg(data);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setErrorMsg('Failed to upload file. Please try again.');
         setLoading(false);
       });
   };
 
   return (
-    <div className="feedback-form bg-gray-200 p-8 rounded-lg shadow-md max-w-full md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto focus-within:bg-gray-300 active:bg-gray-400 transition-colors duration-300">
+    <div className="enquiry-form bg-gray-200 p-8 rounded-lg shadow-md max-w-full mx-auto">
       {loading && (
         <div className="loading-overlay flex items-center justify-center fixed inset-0 bg-black bg-opacity-50 z-50">
           <div className="text-white text-lg">
             <div className="loader border-t-4 border-b-4 border-white rounded-full w-12 h-12 mb-4 animate-spin"></div>
-            Please wait, we are registering your feedback...
+            Uploading file...
           </div>
         </div>
       )}
@@ -86,6 +116,7 @@ const FeedbackForm = () => {
             id="phone"
             name="phone"
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
           />
         </div>
         <div className="mb-4">
@@ -97,33 +128,24 @@ const FeedbackForm = () => {
             name="message"
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             required
-          />
+          ></textarea>
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="attachment">
-            Attachment
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="file">
+            Attachment (optional)
           </label>
           <input
             type="file"
-            id="attachment"
-            name="attachment"
-            accept="*/*"
+            id="file"
+            name="file"
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
         </div>
-        {errorMsg && <p className="text-red-500 text-center mt-4">{errorMsg}</p>}
-        <div className="flex items-center justify-between">
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            disabled={loading}
-          >
-            {loading ? 'Sending...' : 'Send Enquiry'}
-          </button>
-        </div>
+        <button type="submit" className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Submit</button>
       </form>
+      {errorMsg && <p className="mt-4 text-red-500">{errorMsg}</p>}
     </div>
   );
-};
+}
 
-export default FeedbackForm;
+export default EnquiryForm;

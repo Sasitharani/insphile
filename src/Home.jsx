@@ -7,12 +7,15 @@ import WhatWeDo from './WhatWeDo';
 import Contact from './Contact';
 import Portfolio from './Portfolio';
 import Enquiry from './Enquiry';
+import Upload from './Upload';
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <>
+    
+    <div>
       <header className="w-full text-white p-4 flex justify-between items-center fixed top-0 left-0 right-0 z-10 bg-black">
         <h1 className="text-2xl font-bold">Insphile Management Solutions</h1>
         <nav>
@@ -68,12 +71,14 @@ export default function Home() {
           <button className="px-4 py-2 bg-rose-100 text-black rounded-2xl">Book a Call</button>
         </div>
       </div>
+     
       <About />
       <Services />
       <WhatWeDo />
       <Contact />
       <Portfolio />
       <Enquiry />
+      </div>
     </>
   );
 }
